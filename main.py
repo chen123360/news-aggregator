@@ -1,0 +1,131 @@
+from fastapi import FastAPI
+from routers import news, users, favorite
+from fastapi.middleware.cors import CORSMiddleware
+
+from utils.exception_handlers import register_exception_handlers
+
+# 定义 app 为 FastAPI 实例
+app = FastAPI()
+
+# 跨域处理
+app.add_middleware(
+    # 跨域处理中间件
+    CORSMiddleware,
+    # 允许的源，开发阶段允许所有的源，生产环境需要指定源
+    allow_origins=["*"],
+    # 允许携带cookie
+    allow_credentials=True,
+    # 允许的请求方法
+    allow_methods=["*"],
+    # 允许的请求头
+    allow_headers=["*"]
+)
+
+# 注册全局异常处理器
+register_exception_handlers(app)
+
+#一.接口的实现流程
+# 模块化路由 -> API接口规范文档
+# 定义模型类 -> 数据库表（数据库设计文档）
+# 在crud文件夹里面创建文件，封装操作数据库的方法
+# 在路由处理函数里面调用crud封装好的方法
+# 响应结果
+
+#二.查询功能
+# 进入请求
+# 处理分页规则
+# 按分类ID查询新闻
+# 获取新闻总数量
+# 计算是否有更多新闻
+# 响应结果
+
+#三.获取新闻详情
+# 进入请求
+# 按id查询新闻
+# 浏览量 + 1
+# 获取相关新闻
+
+#四.用户注册
+# 进入请求
+# 检查用户是否存在 -> 抛出异常
+# 创建用户
+# 生成访问令牌--作用是判断用户是不是登录态，登录态可以进行更多的操作
+# 响应结果
+
+#五.封装通用成功响应格式
+# 抽取响应结果
+# 定义数据类型
+# 通用函数响应结果
+
+#六.封装全局处理器
+# 定义异常处理器（函数）
+# 全局注册异常处理器
+
+#七.用户登录
+# 进入请求
+# 检查用户是否存在 -> 返回 None -> 抛出异常
+# 验证密码 ->返回 None -> 抛出异常
+# 生成访问令牌
+# 响应结果
+
+#八.用户信息
+# 进入请求 -> 认证 Token
+# 检查令牌有效性 -> 返回 None -> 抛出异常
+# 查找对应用户 -> 返回 None -> 抛出异常
+# 响应结果
+
+#九.修改用户信息
+# 进入请求 -> 认证 Token
+# 检查令牌有效性 -> 返回 None -> 抛出异常
+# 查找对于用户 -> 抛出异常
+# 更新用户信息
+# 响应结果
+
+#十.修改密码
+# 进入请求 -> 认证 Token
+# 验证用户是否登录 -> 抛出异常
+# 验证用户密码 -> 返回False
+# 新密码转密文
+# 更新密码
+# 响应结果
+
+#十一.检查新闻收藏状态
+# 进入请求 -> 认证 Token
+# 验证用户是否登录 -> 抛出异常
+# 检查用户是否收藏当前新闻
+# 响应结果
+
+#十二.添加新闻收藏
+# 进入请求 -> 认证 Token
+# 验证用户是否登录 -> 抛出异常
+# 添加收藏
+# 响应结果
+
+#十三.取消新闻收藏
+# 进入请求 -> 认证 Token
+# 验证用户是否登录 -> 抛出异常
+# 删除收藏表内当前新闻
+# 检查命中数量>0 -> 抛出异常
+# 响应结果
+
+#十四.获取收藏列表
+# 进入请求 -> 认证 Token
+# 验证用户是否登录 -> 抛出异常
+# 统计收藏总量
+# 联表查询收藏新闻
+# 是否有更多
+# 响应结果
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+# 对新闻分类路由进行挂载
+app.include_router(news.router)
+
+# 对用户分类路由进行挂载
+app.include_router(users.router)
+
+# 对新闻收藏路由进行挂载
+app.include_router(favorite.router)
