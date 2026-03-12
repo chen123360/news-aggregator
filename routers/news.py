@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.db_conf import get_db
 from crud import news
+from crud import news_cache
 
 # 创建 APIRouter 实例，定义 router 为实例
 # 参数 prefix 是路由前缀，tags 代表的是分组名
@@ -19,7 +20,9 @@ router = APIRouter(prefix="/api/news", tags=["news"])
 # get_db 是我们定义的依赖项，用于获取数据库会话对象
 async def get_categories(skip: int = 0, limit: int = 100, db: AsyncSession= Depends(get_db)):
     # 调用获取新闻分类方法--news.get_categories
-    categories = await news.get_categories(db, skip, limit)
+    # categories = await news.get_categories(db, skip, limit)
+    # 调用缓存中的新闻分类方法--news_cache.get_cached_categories
+    categories = await news_cache.get_categories(db, skip, limit)
     # 响应结果
     return {
         # 根据文档中的响应示例，返回对应的格式
@@ -45,7 +48,8 @@ async def get_news_list(
     # 定义 offset 接收跳过的数量，对应形参skip
     offset = (page - 1) * page_size
     # 调用获取指定分类ID下的所有新闻，并在前面加上 await 表示异步，并赋值给 news_list
-    news_list = await news.get_news_list(db, category_id, offset, page_size)
+    # news_list = await news.get_news_list(db, category_id, offset, page_size)
+    news_list = await news_cache.get_news_list(db, category_id, offset, page_size)
     # 调用计算总量的方法，把计算结果赋值给 total
     total = await news.get_news_count(db, category_id)
     #计算是否还有更多，只需判断（跳过的 + 当前列表里面的数量）< 总量

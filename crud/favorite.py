@@ -6,7 +6,11 @@ from models.news import News
 
 
 # 定义检查收藏状态方法
-async def is_news_favorite(db: AsyncSession, user_id: int, news_id: int):
+async def is_news_favorite(
+        db: AsyncSession,
+        user_id: int,
+        news_id: int
+):
     query = select(Favorite).where(Favorite.user_id == user_id, Favorite.news_id == news_id)
     result = await db.execute(query)
     # 返回bool值，是否有收藏记录，有收藏记录则返回True，否则返回False
@@ -61,6 +65,21 @@ async def get_favorite_list(
     result = await db.execute(query)
     rows = result.all()
     return rows, total
+
+# 定义清空收藏列表方法
+# 所需参数：对于清空收藏列表，我们需要用一个用户ID指明当前用户清空收藏，以及数据库
+# db--数据库
+# user_id--用户ID
+async def remove_all_favorite(
+        db: AsyncSession,
+        user_id: int
+):
+    stmt = delete(Favorite).where(Favorite.user_id == user_id)
+    result = await db.execute(stmt)
+    await db.commit()
+    # 对于返回结果，我们还需要定义一个返回的删除数量
+    return result.rowcount or 0
+
 
 
 

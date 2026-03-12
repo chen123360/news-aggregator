@@ -1,13 +1,23 @@
 # 这里写数据库的操作方法
-
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, update
+
+from cache.news_cache import get_cached_categories, set_cache_categories, set_cache_news_list, get_cache_news_list
 from models.news import Category, News
+from schemas.base import NewsItemBase
+
 
 # 封装新闻分类查询方法，处理分页规则
 # 所需参数有：db数据库会话形参，skip--跳过的记录数，默认为0，limit--返回的记录数限制，默认为100
 # 参数：db数据库会话形参，作用：使用execute执行select，根据习惯把db放在第一个形参位置
 async def get_categories(db: AsyncSession, skip: int = 0, limit: int = 100):
+
+    # 先尝试从缓存中获取数据，并定义cached_categories接收
+    cached_categories = await get_cached_categories()
+    if cached_categories:
+        return cached_categories
+
     # 进行查询语句，并用stmt接收
     # select(模型类)：对于封装分类查询方法，把 Category 新闻分类表对应模型类传入select中
     # 后跟offset(skip)：跳过skip条记录，limit(limit)--返回的记录数限制，这两个配合在一起使用
@@ -18,7 +28,18 @@ async def get_categories(db: AsyncSession, skip: int = 0, limit: int = 100):
     # result: 接收数据库返回的 Result 对象，因为返回的对象包含结果集游标，需进一步处理才能获取实际数据，所以我们在这定义result去接收
     result = await db.execute(stmt)
     # 对result进行提出所有数据并返回所有数据
-    return result.scalars().all()
+    # return result.scalars().all()
+
+    # 定义categories接收所有数据，接收的是ORM结果
+    categories = result.scalars().all()
+
+    # 写入缓存
+    if categories:
+        categories = jsonable_encoder(categories)
+        # 调用写入缓存的方法
+        await set_cache_categories(categories)
+    # 返回数据
+    return  categories
 
 # 封装新闻列表查询方法，获取所有新闻
 # 所需参数有：
@@ -27,11 +48,35 @@ async def get_categories(db: AsyncSession, skip: int = 0, limit: int = 100):
 # skip--跳过的记录数，根据新闻ID查询到对应新闻时，要考虑跳过了多少条新闻，初始我们默认为0
 # limit--返回的记录数限制，对于返回的新闻，我们需要对其进行限制，不能有太多条，这里我们默认为100
 async def get_news_list(db: AsyncSession, category_id: int = 0, skip: int = 0 , limit: int = 10):
+    # 先尝试从缓存获取新闻列表
+    # 调用获取新闻列表缓存的方法
+    # 对于页码参数，在当前函数中只有跳过数和每页数量，所以我们推到页码公式
+    # skip = (页码 - 1) * 每页数量
+    # 页码 = 跳过的记录数 // 每页数量 +1
+    page = skip // limit + 1
+    cached_list = await get_cache_news_list(category_id, page, limit)
+    # 如果有数据就返回
+    if cached_list:
+        # 不是直接返回cached_list，而是返回ORM结果
+        # 因为cached_list是从缓存中读出来的，他是JSON数据格式，而return应该返回ORM格式，所以这里需要转换成ORM结果
+        # 这里使用列表推导式，将JSON数据转换成ORM结果
+        return [News(**item) for item in cached_list]
     # 查询的是指定分类下的所有新闻，所以我们选择 select(News)--筛选新闻表对于的模型类
     # 用where(News.category_id == category_id)--筛选出指定分类ID下的新闻
     stmt = select(News).where(News.category_id == category_id).offset(skip).limit(limit)
     result = await db.execute(stmt)
-    return result.scalars().all()
+    # return result.scalars().all()
+    news_list = result.scalars().all()
+    # 调用写入缓存的方法
+    if news_list:
+        # 把ORM数据转换为字典才能写入缓存
+        # 转换思路：ORM -> Pydantic -> 字典
+        # 在这里转化为Pydantic时，这个模型类考虑到前面写过新闻模型类，所以这里使用NewsItemBase
+        # 这里使用model_dump()方法，将Pydantic数据转换为字典，参数by_alias=False表示不使用别名，因为在缓存中存储数据时，这是给后端用的，我们不希望使用别名
+        news_data = [NewsItemBase.model_validate(item).model_dump(mode="json", by_alias=False) for item in news_list]
+        # 调用写入缓存的方法
+        await set_cache_news_list(category_id, page, limit, news_data)
+    return news_list
 
 # 封装计算新闻总量方法
 # 所需参数有：

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import news, users, favorite
+from routers import news, users, favorite, history
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils.exception_handlers import register_exception_handlers
@@ -23,6 +23,8 @@ app.add_middleware(
 
 # 注册全局异常处理器
 register_exception_handlers(app)
+
+#所有功能以及实现流程
 
 #一.接口的实现流程
 # 模块化路由 -> API接口规范文档
@@ -116,6 +118,44 @@ register_exception_handlers(app)
 # 是否有更多
 # 响应结果
 
+#十五.清空收藏列表
+# 进入请求 -> 认证 Token
+# 验证用户是否登录 -> 抛出异常
+# 清空当前用户收藏新闻
+
+#十六.添加浏览历史
+# 进入请求 -> 认证 Token
+# 检查是否浏览过当前新闻 -> 更新浏览时间 or -> 添加历史记录
+# 响应结果
+
+#十七.获取浏览历史列表
+# 进入请求 -> 认证 Token
+# 验证用户是否登录 -> 抛出异常
+# 统计浏览历史总量
+# 联表查询浏览历史
+# 是否还有更多
+# 响应结果
+
+#十八.删除单条浏览记录
+# 进入请求 -> 认证 Token
+# 验证用户是否登录 -> 抛出异常
+# 删除单条浏览记录
+# 检查命中数量 > 0 -> 抛出异常
+# 响应结果
+
+#十九.清空浏览历史
+# 进入请求 -> 认证 Token
+# 验证用户是否登录 -> 抛出异常
+# 清空当前用户浏览历史
+# 响应结果
+
+# 关于缓存，如果考虑到访问次数很多，那么数据库的压力会很大，因此我们在这里考虑使用缓存
+# 缓存--高速的临时数据存储机制--作用：提高性能，降低延迟和减轻服务器负载
+# 项目中的缓存流程：
+# 前端请求数据 -> 服务器查缓存 -> 缓存没有（如果有则跳到最后一步） -> 查数据库 -> 写入缓存 -> 返回数据给前端
+# 缓存一般由Redis实现--Redis是一个高性能的Key-Value存储系统，它将数据存储在内存中，因此访问速度非常快，非常适合作为应用层的缓存服务。
+# 安装Redis服务端 -> 配置Redis客户端 -> 封装缓存操作 -> 设计缓存策略
+
 
 @app.get("/")
 async def root():
@@ -129,3 +169,6 @@ app.include_router(users.router)
 
 # 对新闻收藏路由进行挂载
 app.include_router(favorite.router)
+
+# 对用户浏览历史路由进行挂载
+app.include_router(history.router)

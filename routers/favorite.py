@@ -49,7 +49,7 @@ async def remove_favorite(
     result = await favorite.remove_news_favorite(db, user.id, news_id)
     if not result:
         return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="收藏记录不存在")
-    return success_response(message="删除收藏成功", )
+    return success_response(message="删除收藏成功")
 
 # 定义获取收藏新闻列表路由
 @router.get("/list")
@@ -78,7 +78,18 @@ async def get_favorite_list(
     data = FavoriteListResponse(list=favorite_list, total=total, hasMore=has_more)
     return success_response(message="获取收藏列表成功", data=data)
 
-
+# 定义清空收藏列表路由
+@router.delete("/clear")
+# 所需参数：当前用户信息，数据库
+# user--当前用户信息
+# db--数据库
+async def clear_favorite(
+        user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    # 调用清空收藏列表的方法
+    count = await favorite.remove_all_favorite(db, user.id)
+    return success_response(message=f"清空了{count}条记录")
 
 
 
