@@ -49,6 +49,7 @@ async def get_news_list(
     offset = (page - 1) * page_size
     # 调用获取指定分类ID下的所有新闻，并在前面加上 await 表示异步，并赋值给 news_list
     # news_list = await news.get_news_list(db, category_id, offset, page_size)
+    # 调用缓存中的新闻列表方法
     news_list = await news_cache.get_news_list(db, category_id, offset, page_size)
     # 调用计算总量的方法，把计算结果赋值给 total
     total = await news.get_news_count(db, category_id)
