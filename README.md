@@ -24,13 +24,13 @@
 ## 项目截图
 
 ### 首页
-![Homepage.png](image/Homepage.png)![首页截图](images/.png)
+![Homepage.png](image/Homepage.png)
 
 ### 新闻详情页
-![Detail.png](image/Detail.png)![详情页截图](images/图片文件名2.png)
+![Detail.png](image/Detail.png)
 
 ### AI问答界面
-![AI.png](image/AI.png)![AI问答截图](images/AI.png)
+![AI.png](image/AI.png)
 
-### 其他功能
-![My.png](image/My.png)![其他截图](images/图片文件名4.png)
+### 我的
+![My.png](image/My.png)
